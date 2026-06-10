@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Age of Fables — a browser RTS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&family=Cinzel+Decorative:wght@700;900&family=Spectral:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="game">
+  <canvas id="view"></canvas>
+
+  <div id="topbar">
+    <div class="res-group">
+      <span class="res chip"><canvas class="ricon" id="ric-food" width="20" height="20"></canvas><b id="r-food">0</b></span>
+      <span class="res chip"><canvas class="ricon" id="ric-wood" width="20" height="20"></canvas><b id="r-wood">0</b></span>
+      <span class="res chip"><canvas class="ricon" id="ric-gold" width="20" height="20"></canvas><b id="r-gold">0</b></span>
+      <span class="res chip"><canvas class="ricon" id="ric-pop" width="20" height="20"></canvas><b id="r-pop">0/0</b></span>
+    </div>
+    <div id="agebox">
+      <div id="agename">Dark Age</div>
+      <div id="ageprog"><div id="ageprog-fill"></div></div>
+    </div>
+    <div class="top-right">
+      <span id="clock">00:00</span>
+      <button id="btn-speed" class="tbtn" title="Game speed">1.0×</button>
+      <button id="btn-mute" class="tbtn" title="Sound on/off">♪</button>
+    </div>
+  </div>
+
+  <div id="hud">
+    <div id="mmwrap">
+      <canvas id="minimap" width="276" height="138"></canvas>
+    </div>
+    <div id="selpanel"><div class="sel-empty">No selection — left-click or drag to select.<br>Right-click to command.</div></div>
+    <div id="cmdcard"></div>
+  </div>
+
+  <div id="toasts"></div>
+  <div id="tooltip" class="hidden"></div>
+
+  <div id="startscreen">
+    <div class="ss-inner">
+      <div class="ss-rule">❧ ❦ ❧</div>
+      <h1>AGE <span>of</span> FABLES</h1>
+      <p class="ss-sub">A medieval real-time strategy in the spirit of Age&nbsp;of&nbsp;Empires&nbsp;II — entirely in your browser.</p>
+      <div class="ss-cols">
+        <div>
+          <h3>Your Charge</h3>
+          <p>Gather <em>food</em>, <em>wood</em> and <em>gold</em>. Build houses to grow your population. Advance through the <em>Dark</em>, <em>Feudal</em> and <em>Castle</em> ages. Raise an army and <strong>destroy the enemy Town&nbsp;Center</strong> before they destroy yours.</p>
+        </div>
+        <div>
+          <h3>Commands</h3>
+          <p>
+            <b>Left click / drag</b> — select &nbsp;·&nbsp; <b>Right click</b> — move, gather, attack, build<br>
+            <b>A</b> + click — attack-move &nbsp;·&nbsp; <b>S</b> — stop &nbsp;·&nbsp; <b>Esc</b> — cancel<br>
+            <b>WASD / arrows / screen edge</b> — pan &nbsp;·&nbsp; <b>wheel</b> — zoom<br>
+            <b>Ctrl+1–5</b> — set group &nbsp;·&nbsp; <b>1–5</b> — recall &nbsp;·&nbsp; <b>H</b> — Town Center
+          </p>
+        </div>
+      </div>
+      <button id="btn-start">⚜ &nbsp;Begin the Campaign&nbsp; ⚜</button>
+      <div class="ss-rule dim">forged with canvas &amp; cunning — no servers, no assets, no mercy</div>
+    </div>
+  </div>
+
+  <div id="endscreen" class="hidden">
+    <div class="ss-inner">
+      <div class="ss-rule">❧ ❦ ❧</div>
+      <h1 id="end-title">VICTORY</h1>
+      <p class="ss-sub" id="end-sub"></p>
+      <button id="btn-again">⚜ &nbsp;Wage War Anew&nbsp; ⚜</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/data.js"></script>
+<script src="js/sfx.js"></script>
+<script src="js/map.js"></script>
+<script src="js/sprites.js"></script>
+<script src="js/entities.js"></script>
+<script src="js/ai.js"></script>
+<script src="js/render.js"></script>
+<script src="js/input.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
