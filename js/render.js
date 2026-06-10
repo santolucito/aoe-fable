@@ -166,20 +166,23 @@ function render() {
     }
   }
 
-  // fog of war
+  // fog of war — batch each layer into one path so overlapping diamond
+  // edges don't double-darken into a grid pattern
+  const fogDark = new Path2D(), fogDim = new Path2D();
   for (let ty = r.y0; ty <= r.y1; ty++)
     for (let tx = r.x0; tx <= r.x1; tx++) {
       const i = idx(tx, ty);
       if (G.visible[i]) continue;
       const p = ws(tx + 0.5, ty + 0.5);
-      ctx.fillStyle = G.explored[i] ? 'rgba(8,8,18,0.42)' : '#07070c';
-      ctx.beginPath();
-      ctx.moveTo(p.x, p.y - HH - 0.8);
-      ctx.lineTo(p.x + HW + 1.4, p.y);
-      ctx.lineTo(p.x, p.y + HH + 0.8);
-      ctx.lineTo(p.x - HW - 1.4, p.y);
-      ctx.closePath(); ctx.fill();
+      const path = G.explored[i] ? fogDim : fogDark;
+      path.moveTo(p.x, p.y - HH - 0.8);
+      path.lineTo(p.x + HW + 1.4, p.y);
+      path.lineTo(p.x, p.y + HH + 0.8);
+      path.lineTo(p.x - HW - 1.4, p.y);
+      path.closePath();
     }
+  ctx.fillStyle = '#07070c'; ctx.fill(fogDark);
+  ctx.fillStyle = 'rgba(8,8,18,0.42)'; ctx.fill(fogDim);
 
   // rally point of selected building
   for (const e of G.sel) {

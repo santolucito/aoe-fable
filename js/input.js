@@ -54,6 +54,16 @@ function issueContextCommand(wx, wy) {
     for (const u of own) if (u.type === 'villager') { orderBuild(u, ent); sent = true; }
     if (sent) { sfx('click'); return; }
   }
+  if (ent && ent.kind === 'bld' && ent.owner === 0 && ent.done && ent.def.farmPlot &&
+      own.some(u => u.type === 'villager')) {
+    let farmed = false, i = 0;
+    for (const u of own) {
+      if (u.type === 'villager' && !farmed && orderFarm(u, ent)) farmed = true;
+      else { const o = MOVE_OFFSETS[i % MOVE_OFFSETS.length]; i++; orderMove(u, ent.cx + o[0] + 1.2, ent.cy + o[1] + 1.2); }
+    }
+    if (farmed) sfx('click');
+    return;
+  }
   if (RES_TYPE[tt] && G.resAmt[idx(tx, ty)] > 0 && own.some(u => u.type === 'villager')) {
     for (const u of own) {
       if (u.type === 'villager') orderGather(u, tx, ty);

@@ -83,6 +83,9 @@ function mid(p, q, t) { return { x: p.x + (q.x - p.x) * t, y: p.y + (q.y - p.y) 
 
 const BLD_STYLE = {
   farm:       { wallL: '#a98a4a', wallR: '#83692f', roof: '#caa84e', roofD: '#9a7733 ' },
+  mill:       { wallL: '#b3a285', wallR: '#94846a', roof: '#a06038', roofD: '#7d4a29', mill: true },
+  lumber:     { wallL: '#8a6f48', wallR: '#6f5839', roof: '#5a4930', roofD: '#46371f' },
+  mining:     { wallL: '#9a948c', wallR: '#7b756d', roof: '#6e6258', roofD: '#544a40' },
   towncenter: { wallL: '#9a8a72', wallR: '#7d6e58', roof: '#8c3a2c', roofD: '#6b2a20', timber: true, flag: true },
   house:      { wallL: '#b3a285', wallR: '#94846a', roof: '#a98a4a', roofD: '#83692f' },
   barracks:   { wallL: '#8c8278', wallR: '#6e655c', roof: '#5c6a78', roofD: '#46525e', sign: '⚔' },
@@ -182,6 +185,17 @@ function drawBuilding(c, b) {
     c.beginPath(); c.moveTo(B.x, B.y); c.lineTo(R.x, R.y); c.lineTo(peak.x, peak.y); c.closePath(); c.fill();
     c.strokeStyle = 'rgba(255,240,200,0.18)'; c.lineWidth = 1;
     c.beginPath(); c.moveTo(B.x, B.y); c.lineTo(peak.x, peak.y); c.stroke();
+    if (st.mill) {
+      // windmill sails on the roof peak
+      c.strokeStyle = '#e9dcb8'; c.lineWidth = 2;
+      for (let i = 0; i < 4; i++) {
+        const ang = Math.PI / 4 + i * Math.PI / 2;
+        c.beginPath(); c.moveTo(peak.x, peak.y - 2);
+        c.lineTo(peak.x + Math.cos(ang) * 13, peak.y - 2 + Math.sin(ang) * 13); c.stroke();
+      }
+      c.fillStyle = '#6b5232';
+      c.beginPath(); c.arc(peak.x, peak.y - 2, 2.2, 0, 7); c.fill();
+    }
   }
   // team banner
   if (st.flag) {

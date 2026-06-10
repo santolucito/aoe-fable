@@ -12,8 +12,12 @@ Open `index.html` in any modern browser (double-click works — no web server ne
 
 Destroy the enemy **Town Center** before they destroy yours.
 
-- **Economy** — villagers gather food (berries), wood (trees) and gold (mines), and return
-  them to the Town Center. Houses raise your population cap. Farms trickle food forever.
+- **Economy** — villagers gather food (berries), wood (trees) and gold (mines), and haul
+  them to the nearest drop-off: the Town Center takes everything, while the **Mill** (food),
+  **Lumber Camp** (wood) and **Mining Camp** (gold) shorten walk times near resource lines.
+  Houses raise your population cap. **Farms** are worked by one villager each and never
+  run out — right-click a finished farm with a villager to put them to work (the villager
+  who builds a farm starts farming it automatically).
 - **Ages** — advance Dark → Feudal → Castle at the Town Center to unlock the Archery Range,
   Stable, Watch Tower, and stronger units (archers, scouts, knights).
 - **War** — train militia and spearmen at the Barracks. The enemy AI booms, ages up, and

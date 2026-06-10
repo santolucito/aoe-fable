@@ -42,12 +42,22 @@ const UNIT_DEFS = {
 
 const BUILD_DEFS = {
   towncenter: { name: 'Town Center', hp: 2400, w: 3, h: 3, los: 8, cost: { wood: 300 }, time: 90,
-    pop: 5, dropoff: true, trains: ['villager'], atk: 5, range: 6, rof: 2, arrow: true, height: 44,
+    pop: 5, dropoff: ['food', 'wood', 'gold'], trains: ['villager'], atk: 5, range: 6, rof: 2, arrow: true, height: 44,
     desc: 'Heart of your empire. Trains villagers, accepts resources, advances ages.' },
   house:      { name: 'House', hp: 550, w: 2, h: 2, los: 3, cost: { wood: 25 }, time: 15, pop: 5, age: 0, height: 22,
     desc: 'Supports 5 population.' },
-  farm:       { name: 'Farm', hp: 120, w: 2, h: 2, los: 2, cost: { wood: 45 }, time: 12, age: 0, height: 5, farm: 0.33,
-    desc: 'A tilled field that yields a steady trickle of food while it stands.' },
+  farm:       { name: 'Farm', hp: 120, w: 2, h: 2, los: 2, cost: { wood: 45 }, time: 12, age: 0, height: 5,
+    farmPlot: true, walkable: true,
+    desc: 'A tilled field. One villager can work it for an endless supply of food.' },
+  mill:       { name: 'Mill', hp: 600, w: 2, h: 2, los: 4, cost: { wood: 100 }, time: 20, age: 0,
+    dropoff: ['food'], height: 26, mill: true,
+    desc: 'Food drop-off point. Build near berries and farms.' },
+  lumber:     { name: 'Lumber Camp', hp: 600, w: 2, h: 2, los: 4, cost: { wood: 100 }, time: 20, age: 0,
+    dropoff: ['wood'], height: 24,
+    desc: 'Wood drop-off point. Build beside the forest.' },
+  mining:     { name: 'Mining Camp', hp: 600, w: 2, h: 2, los: 4, cost: { wood: 100 }, time: 20, age: 0,
+    dropoff: ['gold'], height: 24,
+    desc: 'Gold drop-off point. Build beside the mines.' },
   barracks:   { name: 'Barracks', hp: 1200, w: 3, h: 3, los: 5, cost: { wood: 175 }, time: 30, age: 0,
     trains: ['militia', 'spearman'], height: 36, desc: 'Trains infantry.' },
   archery:    { name: 'Archery Range', hp: 1050, w: 3, h: 3, los: 5, cost: { wood: 175 }, time: 30, age: 1,
@@ -57,7 +67,7 @@ const BUILD_DEFS = {
   tower:      { name: 'Watch Tower', hp: 850, w: 1, h: 1, los: 9, cost: { wood: 50, gold: 125 }, time: 30, age: 1,
     atk: 6, range: 7, rof: 2, arrow: true, height: 62, desc: 'Defensive tower. Fires on nearby enemies.' },
 };
-const BUILD_MENU = ['house', 'farm', 'barracks', 'archery', 'stable', 'tower'];
+const BUILD_MENU = ['house', 'farm', 'mill', 'lumber', 'mining', 'barracks', 'archery', 'stable', 'tower'];
 
 /* ---- global game state ---- */
 const G = {

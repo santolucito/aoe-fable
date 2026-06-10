@@ -21,8 +21,8 @@ function aiFindBuildSpot(type, cx, cy) {
   return null;
 }
 
-function aiBuild(type, tc, vills) {
-  const spot = aiFindBuildSpot(type, tc.cx, tc.cy);
+function aiBuild(type, nearX, nearY, vills) {
+  const spot = aiFindBuildSpot(type, nearX, nearY);
   if (!spot) return false;
   const b = placeBuilding(1, type, spot.tx, spot.ty);
   if (!b) return false;
@@ -70,6 +70,7 @@ function updateAI(dt) {
   const want = P.age === 0 ? { food: 0.55, wood: 0.45, gold: 0 } : { food: 0.4, wood: 0.32, gold: 0.28 };
   const counts = { food: 0, wood: 0, gold: 0 };
   for (const v of vills) {
+    if (v.task.k === 'farm' || (v.task.k === 'deposit' && v.task.farm)) { counts.food++; continue; }
     const node = v.task.node;
     if (node && RES_TYPE[node.tt]) counts[RES_TYPE[node.tt]]++;
   }
@@ -80,8 +81,16 @@ function updateAI(dt) {
       const d = want[r] * vills.length - counts[r];
       if (d > deficit) { deficit = d; pick = r; }
     }
+    if (pick === 'food') {
+      // berries first, then an untended farm
+      const berry = findNearestRes(TILE.BERRY, tc.cx, tc.cy, 26);
+      if (berry) { orderGather(v, berry.tx, berry.ty); counts.food++; continue; }
+      const freeFarm = myBlds.find(b => b.type === 'farm' && b.done && !farmWorker(b));
+      if (freeFarm && orderFarm(v, freeFarm)) { counts.food++; continue; }
+      pick = 'wood';
+    }
     const node = findNearestRes(TILE_FOR_RES[pick], tc.cx, tc.cy, 26) ||
-                 findNearestRes(TILE_FOR_RES[pick === 'food' ? 'wood' : 'food'], tc.cx, tc.cy, 26);
+                 findNearestRes(TILE_FOR_RES[pick === 'gold' ? 'wood' : 'gold'], tc.cx, tc.cy, 26);
     if (node) { orderGather(v, node.tx, node.ty); counts[RES_TYPE[G.tiles[idx(node.tx, node.ty)]]]++; }
   }
 
@@ -91,7 +100,7 @@ function updateAI(dt) {
 
   const housePending = myBlds.some(b => b.type === 'house' && !b.done);
   if (P.popCap - P.pop <= 3 && P.popCap < 70 && !housePending && canAfford(1, { wood: 25 }))
-    aiBuild('house', tc, vills);
+    aiBuild('house', tc.cx, tc.cy, vills);
 
   // farms once the local berries thin out (or just to scale food with age)
   const farms = myBlds.filter(b => b.type === 'farm').length;
@@ -99,13 +108,25 @@ function updateAI(dt) {
   const wantFarms = (berriesLeft ? 2 : 5) + P.age * 3;
   if (vills.length >= 8 && farms < wantFarms && P.res.wood >= 45 + 90 &&
       !myBlds.some(b => b.type === 'farm' && !b.done))
-    aiBuild('farm', tc, vills);
+    aiBuild('farm', tc.cx, tc.cy, vills);
+
+  // drop-off camps when a resource line sits far from every accepting dropoff
+  for (const [tt, res, camp] of [[TILE.FOREST, 'wood', 'lumber'], [TILE.GOLD, 'gold', 'mining']]) {
+    if (myBlds.some(b => b.type === camp)) continue;
+    const node = findNearestRes(tt, tc.cx, tc.cy, 30);
+    if (!node) continue;
+    let dmin = 1e9;
+    for (const b of myBlds)
+      if (b.done && b.def.dropoff && b.def.dropoff.includes(res))
+        dmin = Math.min(dmin, dist2(node.tx + 0.5, node.ty + 0.5, b.cx, b.cy));
+    if (dmin > 49 && P.res.wood >= 150) aiBuild(camp, node.tx, node.ty, vills);
+  }
 
   if (vills.length >= 7 && !myBlds.some(b => b.type === 'barracks') && canAfford(1, { wood: 175 }))
-    aiBuild('barracks', tc, vills);
+    aiBuild('barracks', tc.cx, tc.cy, vills);
   if (P.age >= 1) {
-    if (!myBlds.some(b => b.type === 'archery') && canAfford(1, { wood: 200 })) aiBuild('archery', tc, vills);
-    else if (!myBlds.some(b => b.type === 'stable') && canAfford(1, { wood: 250 })) aiBuild('stable', tc, vills);
+    if (!myBlds.some(b => b.type === 'archery') && canAfford(1, { wood: 200 })) aiBuild('archery', tc.cx, tc.cy, vills);
+    else if (!myBlds.some(b => b.type === 'stable') && canAfford(1, { wood: 250 })) aiBuild('stable', tc.cx, tc.cy, vills);
   }
 
   /* --- rescue orphaned construction sites (builder died or got retasked) --- */
@@ -136,6 +157,8 @@ function updateAI(dt) {
     if (P.age === 0 && vills.length >= 11) foodReserve = 560;
     else if (P.age === 1) { foodReserve = 860; goldReserve = 230; }
   }
+  // but always keep a defensive core before banking for the next age
+  if (army.length < 3 + P.age * 4) { foodReserve = 0; goldReserve = 0; }
   for (const b of myBlds) {
     if (!b.done || !b.def.trains || b.type === 'towncenter' || b.queue.length >= 2) continue;
     const options = [...b.def.trains].reverse();

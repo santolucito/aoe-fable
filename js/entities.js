@@ -22,7 +22,7 @@ function createBuilding(owner, type, tx, ty, complete) {
     prog: complete ? def.time : 0, done: !!complete,
     queue: [], rally: null, cool: 0, target: null, dead: false,
   };
-  setBlocked(tx, ty, def.w, def.h, 1);
+  if (!def.walkable) setBlocked(tx, ty, def.w, def.h, 1);
   if (b.done && def.pop) G.players[owner].popCap += def.pop;
   G.buildings.push(b);
   return b;
@@ -37,6 +37,11 @@ function canPlace(type, tx, ty, owner) {
       if (G.tiles[i] !== TILE.GRASS || G.block[i]) return false;
       if (owner === 0 && !G.explored[i]) return false;
     }
+  // walkable buildings (farms) leave tiles unblocked, so check footprints too
+  for (const b of G.buildings) {
+    if (b.dead) continue;
+    if (tx < b.tx + b.w && tx + def.w > b.tx && ty < b.ty + b.h && ty + def.h > b.ty) return false;
+  }
   return true;
 }
 
@@ -83,6 +88,23 @@ function orderBuild(u, b) {
   u.task = { k: 'build', b };
   u.path = null; u.returnTo = null;
 }
+// the villager (if any) currently working or hauling for a farm
+function farmWorker(b) {
+  return G.units.find(u => !u.dead &&
+    ((u.task.k === 'farm' && u.task.b === b) || (u.task.k === 'deposit' && u.task.farm === b)));
+}
+function orderFarm(u, b) {
+  if (u.type !== 'villager' || !b || b.dead || !b.done || !b.def.farmPlot) return false;
+  const w = farmWorker(b);
+  if (w && w !== u) {
+    if (u.owner === 0) toast('That farm already has a farmer', true);
+    return false;
+  }
+  if (u.carryType !== 'food') { u.carry = 0; u.carryType = 'food'; }
+  u.task = { k: 'farm', b };
+  u.path = null; u.returnTo = null;
+  return true;
+}
 
 /* ---------- movement ---------- */
 function moveAlong(u, dt) {
@@ -113,6 +135,7 @@ function nearestDropoff(u) {
   let best = null, bd = 1e9;
   for (const b of G.buildings) {
     if (b.owner !== u.owner || !b.done || b.dead || !b.def.dropoff) continue;
+    if (u.carryType && !b.def.dropoff.includes(u.carryType)) continue;
     const d = dist2(b.cx, b.cy, u.x, u.y);
     if (d < bd) { bd = d; best = b; }
   }
@@ -144,7 +167,7 @@ function killEntity(e) {
     G.fx.push({ x: e.x, y: e.y, t: 0.6, kind: 'puff' });
     if (tileVisible(Math.floor(e.x), Math.floor(e.y))) sfx('die');
   } else {
-    setBlocked(e.tx, e.ty, e.w, e.h, 0);
+    if (!e.def.walkable) setBlocked(e.tx, e.ty, e.w, e.h, 0);
     if (e.done && e.def.pop) G.players[e.owner].popCap -= e.def.pop;
     for (const q of e.queue) { refundCost(e.owner, UNIT_DEFS[q.type].cost); G.players[e.owner].pop--; }
     e.queue.length = 0;
@@ -338,10 +361,35 @@ function updateUnit(u, dt) {
       break;
     }
 
+    case 'farm': {
+      const b = t.b;
+      if (!b || b.dead || !b.done) { u.task = { k: 'idle' }; break; }
+      if (u.carry >= CARRY_MAX) { u.task = { k: 'deposit', farm: b }; break; }
+      const d = Math.hypot(b.cx - u.x, b.cy - u.y);
+      if (d > 0.6) {
+        if (!u.path || !u.path.length) {
+          u.path = findPath(u.x, u.y, b.cx, b.cy);
+          if (!u.path) { u.task = { k: 'idle' }; break; }
+        }
+        moveAlong(u, dt);
+      } else {
+        u.path = null; u.moving = false; u.anim += dt;
+        if (u.swingT <= 0) u.swingT = 0.3;
+        u.carryType = 'food';
+        u.carry += GATHER_RATE * dt;
+      }
+      break;
+    }
+
     case 'deposit': {
+      const resume = () => {
+        if (t.farm && !t.farm.dead && t.farm.done) return { k: 'farm', b: t.farm };
+        if (t.node) return { k: 'gather', node: t.node };
+        return { k: 'idle' };
+      };
       if (u.carry <= 0.01) {
         u.carry = 0;
-        u.task = t.node ? { k: 'gather', node: t.node } : { k: 'idle' };
+        u.task = resume();
         break;
       }
       const dp = nearestDropoff(u);
@@ -351,7 +399,7 @@ function updateUnit(u, dt) {
       if (d <= 0.85 + rad) {
         G.players[u.owner].res[u.carryType] += u.carry;
         u.carry = 0;
-        u.task = t.node ? { k: 'gather', node: t.node } : { k: 'idle' };
+        u.task = resume();
         u.path = null;
       } else {
         if (!u.path || !u.path.length || t.bid !== dp.id) {
@@ -381,7 +429,10 @@ function updateUnit(u, dt) {
         if (u.swingT <= 0) u.swingT = 0.3;
         b.prog += dt;
         b.hp = Math.min(b.def.hp, b.hp + b.def.hp * dt / b.def.time * 0.9);
-        if (b.prog >= b.def.time) completeBuilding(b);
+        if (b.prog >= b.def.time) {
+          completeBuilding(b);
+          if (b.def.farmPlot) orderFarm(u, b); // the builder starts farming the field
+        }
       }
       break;
     }
@@ -391,7 +442,6 @@ function updateUnit(u, dt) {
 function updateBuilding(b, dt) {
   if (!b.done) return;
   b.cool = Math.max(0, b.cool - dt);
-  if (b.def.farm) G.players[b.owner].res.food += b.def.farm * dt;
   // training
   if (b.queue.length) {
     const q = b.queue[0];
@@ -402,7 +452,10 @@ function updateBuilding(b, dt) {
       b.queue.shift();
       if (b.rally) {
         const rtx = Math.floor(b.rally.x), rty = Math.floor(b.rally.y);
-        if (u.type === 'villager' && inMap(rtx, rty) && RES_TYPE[G.tiles[idx(rtx, rty)]] && G.resAmt[idx(rtx, rty)] > 0)
+        const rallyFarm = u.type === 'villager' && G.buildings.find(f => !f.dead && f.done &&
+          f.owner === b.owner && f.def.farmPlot && rtx >= f.tx && rtx < f.tx + f.w && rty >= f.ty && rty < f.ty + f.h);
+        if (rallyFarm && orderFarm(u, rallyFarm)) { /* new villager works the field */ }
+        else if (u.type === 'villager' && inMap(rtx, rty) && RES_TYPE[G.tiles[idx(rtx, rty)]] && G.resAmt[idx(rtx, rty)] > 0)
           orderGather(u, rtx, rty);
         else orderMove(u, b.rally.x, b.rally.y);
       }

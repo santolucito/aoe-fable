@@ -3,7 +3,7 @@
 
 const $ = id => document.getElementById(id);
 let cardButtons = []; // {el, cmd}
-const CARD_KEYS = ['q', 'w', 'e', 'r', 't', 'y', 'u', 'i'];
+const CARD_KEYS = ['q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p', 'k'];
 
 function initUI() {
   drawResIcon($('ric-food'), 'food');
@@ -209,6 +209,7 @@ function refreshSelPanel() {
     body = `<div class="sel-stats">Under construction — <b>${Math.floor(e.prog / def.time * 100)}%</b>` +
            ` &nbsp;<span style="color:#7d6d4e">(villagers right-click to help)</span></div>`;
   } else {
+    if (def.farmPlot) body += `<div class="sel-stats">${farmWorker(e) ? 'A farmer works this field.' : '<span style="color:#d8a35a">Untended — right-click it with a villager.</span>'}</div>`;
     if (def.trains) body += `<div class="sel-stats" style="color:#7d6d4e">Right-click the map to set a rally point.</div>`;
     if (e.queue.length) {
       body += `<div class="queue" id="qrow"></div>`;
